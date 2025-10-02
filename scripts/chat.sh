@@ -51,14 +51,10 @@ fi
 export MESSAGE="${2//$'\n'/\\n}"
 
 # Send a request to the OpenAI API
-REQUEST="$(
-  cat <<EOF
-curl -s "$AZURE_OPENAI_ENDPOINT/openai/deployments/$MODEL/chat/completions?api-version=$AZURE_API_VERSION" \
+RESPONSE=$(curl -s "$AZURE_OPENAI_ENDPOINT/openai/deployments/$MODEL/chat/completions?api-version=$AZURE_API_VERSION" \
   -H "Content-Type: application/json" \
   -H "api-key: $AZURE_OPENAI_KEY" \
-  -d "{\"messages\":[{\"role\": \"system\", \"content\": \"You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with the single, executable shell command. Do not add any explanation, markdown, or any other text.\"}, {\"role\": \"user\", \"content\": \"$MESSAGE\"}]}"
-EOF
-)"
-echo >&2 "Sending request to OpenAI..."
-echo >&2 "$REQUEST"
-eval "$REQUEST"
+  -d "{\"messages\":[{\"role\": \"system\", \"content\": \"You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with the single, executable shell command. Do not add any explanation, markdown, or any other text.\"}, {\"role\": \"user\", \"content\": \"$MESSAGE\"}]}")
+
+# Extract the command from JSON response
+echo "$RESPONSE" | grep -o '"content":"[^"]*"' | sed 's/"content":"//' | sed 's/"$//'
