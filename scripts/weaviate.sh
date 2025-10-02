@@ -4,8 +4,6 @@
 ENV_CONTENT=$(cat "$(dirname $0)/../.env")
 WEAVIATE_URL=$(echo "$ENV_CONTENT" | grep -E '^WEAVIATE_URL=' | cut -d '=' -f 2-)
 WEAVIATE_API_KEY=$(echo "$ENV_CONTENT" | grep -E '^WEAVIATE_API_KEY=' | cut -d '=' -f 2-)
-OPENAI_API_KEY=$(echo "$ENV_CONTENT" | grep -E '^OPENAI_API_KEY=' | cut -d '=' -f 2-)
-OPENAI_ENDPOINT=$(echo "$ENV_CONTENT" | grep -E '^OPENAI_ENDPOINT=' | cut -d '=' -f 2-)
 
 # Function to initialize schema
 init_schema() {
@@ -19,13 +17,7 @@ init_schema() {
                 {"name": "command", "dataType": ["text"]},
                 {"name": "confidence", "dataType": ["number"]}
             ],
-            "vectorizer": "text2vec-openai",
-            "moduleConfig": {
-                "text2vec-openai": {
-                    "model": "text-embedding-ada-002",
-                    "baseURL": "'$OPENAI_ENDPOINT'/openai/deployments/text-embedding-ada-002"
-                }
-            }
+            "vectorizer": "none"
         }' > /dev/null 2>&1
 }
 
@@ -35,8 +27,7 @@ search_command() {
     curl -s "$WEAVIATE_URL/v1/graphql" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
-        -H "X-OpenAI-Api-Key: $OPENAI_API_KEY" \
-        -d "{\"query\": \"{ Get { Command(nearText: {concepts: [\\\"$query\\\"]}, limit: 1) { command } } }\"}" \
+        -d "{\"query\": \"{ Get { Command(where: {path: [\\\"query\\\"], operator: Equal, valueText: \\\"$query\\\"}, limit: 1) { command } } }\"}" \
         | grep -o '"command":"[^"]*"' | sed 's/"command":"//' | sed 's/"$//' | head -1
 }
 
@@ -47,7 +38,6 @@ store_command() {
     curl -s "$WEAVIATE_URL/v1/objects" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
-        -H "X-OpenAI-Api-Key: $OPENAI_API_KEY" \
         -d "{\"class\": \"Command\", \"properties\": {\"query\": \"$query\", \"command\": \"$command\", \"confidence\": 1.0}}" > /dev/null
 }
 
