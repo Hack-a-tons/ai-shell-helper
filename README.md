@@ -2,6 +2,8 @@
 
 A simple CLI that translates natural language into shell commands using AI. Just type what you want to do in plain English!
 
+*Built for the [HackerSquad Builders Hackathon](https://hackersquad.io/builders/dashboard/events/cm5vmcvou000aov0lls2pmd3e) featuring Weaviate integration for intelligent command caching.*
+
 ---
 ## 🚀 Quick Start
 
@@ -25,27 +27,29 @@ A simple CLI that translates natural language into shell commands using AI. Just
 
 4. **Start using it:**
    ```bash
-   a list my files
-   a how big are my files
-   a where am i
+   pls list my files
+   please how big are my files
+   pls where am i
    ```
+
+**Optional:** Set up Weaviate for command caching (see Configuration section below).
 
 ---
 ## ✨ Demo
 
 ```bash
-$ a list my files
+$ pls list my files
 > ls
 a		README.md	scripts		setup.sh
 
-$ a how big are my files
+$ please how big are my files
 > du -sh *
 4.0K	a
 4.0K	README.md
 4.0K	scripts
 4.0K	setup.sh
 
-$ a where am i
+$ pls where am i
 > pwd
 /Users/dbystruev/Downloads/GitHub/Hack-a-tons/ai-shell-helper
 ```
@@ -57,12 +61,12 @@ $ a where am i
 * **Instant Execution:** Shows the command in color, then runs it automatically
 * **Context-Aware:** Generates commands appropriate for your OS and shell
 * **Powered by GPT-4.1:** Uses Azure OpenAI API for accurate command generation
-* **Ultra-Simple:** Just one letter `a` followed by your request
+* **Ultra-Simple:** Just `pls` or `please` followed by your request
 
 ---
 ## ⚙️ How It Works
 
-The `a` command takes your natural language query and:
+The `pls` or `please` command takes your natural language query and:
 
 1. **Checks Weaviate cache** for similar previous queries (if configured)
 2. If found, returns cached command instantly with green "(cached)" indicator
@@ -82,11 +86,11 @@ Weaviate provides semantic caching that:
 
 Example flow:
 ```bash
-$ a list my files          # First time - calls OpenAI, stores in Weaviate
-> ls                       # Blue text (from AI)
+$ pls list my files          # First time - calls OpenAI, stores in Weaviate
+> ls                         # Blue text (from AI)
 
-$ a show my files          # Similar query - finds cached result
-> ls (cached)              # Green text (from cache)
+$ pls show my files          # Similar query - finds cached result
+> ls (cached)                # Green text (from cache)
 ```
 
 ---
@@ -119,11 +123,11 @@ docker compose up -d
 ---
 ## 💡 More Examples
 
-* `a show my current git branch`
-* `a find all markdown files modified today`
-* `a create a backup of this directory`
-* `a what processes are using port 3000`
-* `a compress the src folder`
+* `pls show my current git branch`
+* `please find all markdown files modified today`
+* `pls create a backup of this directory`
+* `please what processes are using port 3000`
+* `pls compress the src folder`
 
 ---
 ## 📄 License
