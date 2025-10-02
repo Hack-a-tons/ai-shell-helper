@@ -1,92 +1,91 @@
 # ai-shell-helper 🚀
 
-My project for the Hack Night at GitHub! A simple CLI that translates natural language into shell commands using the power of AI.
+A simple CLI that translates natural language into shell commands using AI. Just type what you want to do in plain English!
 
+---
+## 🚀 Quick Start
 
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Hack-a-tons/ai-shell-helper.git
+   cd ai-shell-helper
+   ```
+
+2. **Set up your Azure OpenAI credentials:**
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` and add your Azure OpenAI API key and endpoint.
+
+3. **Create the alias:**
+   ```bash
+   ./setup.sh
+   ```
+   Copy and paste the alias command it shows you.
+
+4. **Start using it:**
+   ```bash
+   a list my files
+   a how big are my files
+   a where am i
+   ```
 
 ---
 ## ✨ Demo
 
-Forget trying to remember the exact syntax for `find` or `tar`. Just ask `ai-shell-helper` what you want to do.
-
 ```bash
-$ ./ai-shell-helper.sh "find all markdown files in the current directory modified in the last day"
+$ a list my files
+> ls
+a		README.md	scripts		setup.sh
 
-> find . -name "*.md" -mtime -1
-```
+$ a how big are my files
+> du -sh *
+4.0K	a
+4.0K	README.md
+4.0K	scripts
+4.0K	setup.sh
 
-```bash
-$ ./ai-shell-helper.sh "list the 5 largest files here and show their size"
-
-> ls -lS | head -n 6
+$ a where am i
+> pwd
+/Users/dbystruev/Downloads/GitHub/Hack-a-tons/ai-shell-helper
 ```
 
 ---
 ## 📋 Features
 
-* **Natural Language to Command:** Translates plain English queries into accurate, executable shell commands.
-* **Context-Aware:** Uses your OS and shell type (`$SHELL`) to generate the correct command syntax for your environment.
-* **Powered by GPT-4.1:** Leverages the Azure OpenAI API for high-quality command generation.
-* **Lightweight:** A simple, single-file bash script that is easy to read, modify, and use.
+* **Natural Language to Command:** Just type what you want to do - no need to remember complex syntax
+* **Instant Execution:** Shows the command in color, then runs it automatically
+* **Context-Aware:** Generates commands appropriate for your OS and shell
+* **Powered by GPT-4.1:** Uses Azure OpenAI API for accurate command generation
+* **Ultra-Simple:** Just one letter `a` followed by your request
 
 ---
 ## ⚙️ How It Works
 
-The `ai-shell-helper.sh` script takes your text query as its argument. It then constructs a carefully engineered prompt for the OpenAI API.
+The `a` command takes your natural language query and:
 
-1.  **System Prompt:** It first tells the AI model its role: to act as a shell command expert and to *only* respond with the raw command, with no extra text or explanations.
-2.  **Contextual Info:** It gathers your system information (e.g., `uname -a` and `$SHELL`) and includes it in the prompt, so the AI knows whether to generate commands for `zsh` on macOS, `bash` on Linux, etc.
-3.  **API Call:** The script sends the request to the Azure OpenAI endpoint.
-4.  **Clean Output:** It parses the JSON response and prints the clean, executable command directly to your terminal.
-
----
-## 🔧 Setup
-
-Get up and running in a few steps.
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/Hack-a-tons/ai-shell-helper.git](https://github.com/Hack-a-tons/ai-shell-helper.git)
-    cd ai-shell-helper
-    ```
-
-2.  **Configure your credentials:**
-    The script reads your Azure OpenAI credentials from a `.env` file.
-    ```bash
-    # Create the .env file from the example
-    cp .env.example .env
-    ```
-    Now, edit the `.env` file and add your specific API key, endpoint, and version.
-
-3.  **Make the script executable:**
-    ```bash
-    chmod +x ai-shell-helper.sh
-    ```
+1. Sends it to Azure OpenAI with a specialized prompt for shell command generation
+2. Extracts the clean command from the JSON response
+3. Displays the command in cyan color with a `>` prefix
+4. Executes the command automatically
 
 ---
-## 🚀 Usage
+## 🔧 Configuration
 
-To use the helper, simply run the script with your query in quotes.
+You need three environment variables in your `.env` file:
 
-```bash
-./ai-shell-helper.sh "your natural language query"
-```
-
-#### More Examples:
-
-* `./ai-shell-helper.sh "show my current git branch"`
-* `./ai-shell-helper.sh "how do I find a process that is listening on port 3000?"`
-* `./ai-shell-helper.sh "create a gzipped tarball of the 'src' directory"`
+- `AZURE_API_VERSION` - API version (usually `2025-01-01-preview`)
+- `OPENAI_API_KEY` - Your Azure OpenAI API key
+- `OPENAI_ENDPOINT` - Your Azure OpenAI endpoint URL
 
 ---
-## 💡 Future Improvements
+## 💡 More Examples
 
-This project was built in just a couple of hours! Here are some ideas for taking it to the next level:
-
-* **Deeper Context:** Automatically include the current working directory (`$PWD`) and the status of the current `git` repository in the prompt for even more relevant commands.
-* **Interactive Execution:** Add a `-x` or `--execute` flag to immediately run the generated command, with a confirmation safety prompt for potentially destructive commands (`rm`, `dd`, `mv`).
-* **Command History:** Keep a log of previous queries and generated commands for easy recall.
-* **Better Error Handling:** Add more robust error handling for API failures or empty responses from the AI.
+* `a show my current git branch`
+* `a find all markdown files modified today`
+* `a create a backup of this directory`
+* `a what processes are using port 3000`
+* `a compress the src folder`
 
 ---
 ## 📄 License
