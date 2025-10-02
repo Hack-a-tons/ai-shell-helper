@@ -2,4 +2,16 @@
 cd "$(dirname $0)"
 COMMAND=$(./scripts/chat.sh "gpt-4.1" "$*" 2>/dev/null)
 echo -e "\033[36m> $COMMAND\033[0m"
+
+# Check for dangerous commands
+if [[ "$COMMAND" =~ ^(rm|sudo|dd|mkfs|fdisk|format|del|deltree|shutdown|reboot|halt|init|kill|killall|pkill|chmod.*777|chown.*root) ]]; then
+    echo -e "\033[31mWarning: Potentially dangerous command detected!\033[0m"
+    read -p "Are you sure you want to execute this? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Command cancelled."
+        exit 0
+    fi
+fi
+
 eval "$COMMAND"
