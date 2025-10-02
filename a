@@ -1,7 +1,28 @@
 #!/usr/bin/env bash
 cd "$(dirname $0)"
-COMMAND=$(./scripts/chat.sh "gpt-4.1" "$*" 2>/dev/null)
-echo -e "\033[36m> $COMMAND\033[0m"
+
+QUERY="$*"
+
+# Try to find cached command in Weaviate first (if available)
+if command -v curl >/dev/null 2>&1; then
+    # Initialize schema on first use
+    ./scripts/weaviate.sh init 2>/dev/null
+    CACHED_COMMAND=$(./scripts/weaviate.sh search "$QUERY" 2>/dev/null)
+fi
+
+if [ -n "$CACHED_COMMAND" ]; then
+    COMMAND="$CACHED_COMMAND"
+    echo -e "\033[32m> $COMMAND (cached)\033[0m"
+else
+    # Get command from OpenAI
+    COMMAND=$(./scripts/chat.sh "gpt-4.1" "$QUERY" 2>/dev/null)
+    echo -e "\033[36m> $COMMAND\033[0m"
+    
+    # Store in Weaviate for future use (if available)
+    if command -v curl >/dev/null 2>&1; then
+        ./scripts/weaviate.sh store "$QUERY" "$COMMAND" 2>/dev/null &
+    fi
+fi
 
 # Check for dangerous commands
 if [[ "$COMMAND" =~ ^(rm|sudo|dd|mkfs|fdisk|format|del|deltree|shutdown|reboot|halt|init|kill|killall|pkill|chmod.*777|chown.*root) ]]; then

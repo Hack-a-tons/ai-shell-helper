@@ -54,7 +54,12 @@ export MESSAGE="${2//$'\n'/\\n}"
 RESPONSE=$(curl -s "$AZURE_OPENAI_ENDPOINT/openai/deployments/$MODEL/chat/completions?api-version=$AZURE_API_VERSION" \
   -H "Content-Type: application/json" \
   -H "api-key: $AZURE_OPENAI_KEY" \
-  -d "{\"messages\":[{\"role\": \"system\", \"content\": \"You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with the single, executable shell command. Do not add any explanation, markdown, or any other text.\"}, {\"role\": \"user\", \"content\": \"$MESSAGE\"}]}")
+  -d "{\"messages\":[{\"role\": \"system\", \"content\": \"You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with a single, executable shell command. Never include explanations, markdown, color codes, or escape sequences. If the request is unclear or not related to shell commands, respond with 'echo Please provide a specific command request'.\"}, {\"role\": \"user\", \"content\": \"$MESSAGE\"}]}")
 
-# Extract the command from JSON response
-echo "$RESPONSE" | grep -o '"content":"[^"]*"' | sed 's/"content":"//' | sed 's/"$//'
+# Extract the command from JSON response using a more robust method
+if command -v jq >/dev/null 2>&1; then
+    echo "$RESPONSE" | jq -r '.choices[0].message.content'
+else
+    # Fallback parsing without jq
+    echo "$RESPONSE" | sed -n 's/.*"content":"\([^"]*\)".*/\1/p' | head -1
+fi
