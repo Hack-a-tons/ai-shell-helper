@@ -19,11 +19,11 @@ init_schema() {
                 {"name": "command", "dataType": ["text"]},
                 {"name": "confidence", "dataType": ["number"]}
             ],
-            "vectorizer": "text2vec-azure-openai",
+            "vectorizer": "text2vec-openai",
             "moduleConfig": {
-                "text2vec-azure-openai": {
-                    "resourceName": "'$(echo $OPENAI_ENDPOINT | sed 's|https://||' | sed 's|\..*||')'",
-                    "deploymentId": "text-embedding-ada-002"
+                "text2vec-openai": {
+                    "model": "text-embedding-ada-002",
+                    "baseURL": "'$OPENAI_ENDPOINT'/openai/deployments/text-embedding-ada-002"
                 }
             }
         }' > /dev/null 2>&1
@@ -35,7 +35,7 @@ search_command() {
     curl -s "$WEAVIATE_URL/v1/graphql" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
-        -H "X-Azure-Api-Key: $OPENAI_API_KEY" \
+        -H "X-OpenAI-Api-Key: $OPENAI_API_KEY" \
         -d "{\"query\": \"{ Get { Command(nearText: {concepts: [\\\"$query\\\"]}, limit: 1) { command } } }\"}" \
         | grep -o '"command":"[^"]*"' | sed 's/"command":"//' | sed 's/"$//' | head -1
 }
@@ -47,7 +47,7 @@ store_command() {
     curl -s "$WEAVIATE_URL/v1/objects" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
-        -H "X-Azure-Api-Key: $OPENAI_API_KEY" \
+        -H "X-OpenAI-Api-Key: $OPENAI_API_KEY" \
         -d "{\"class\": \"Command\", \"properties\": {\"query\": \"$query\", \"command\": \"$command\", \"confidence\": 1.0}}" > /dev/null
 }
 
