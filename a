@@ -5,6 +5,8 @@ QUERY="$*"
 
 # Try to find cached command in Weaviate first (if available)
 if command -v curl >/dev/null 2>&1; then
+    # Initialize schema on first use
+    ./scripts/weaviate.sh init 2>/dev/null
     CACHED_COMMAND=$(./scripts/weaviate.sh search "$QUERY" 2>/dev/null)
 fi
 
