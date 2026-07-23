@@ -48,21 +48,21 @@ SYSTEM_PROMPT="You are an expert at translating natural language to shell comman
 extract_command() {
     local response="$1"
     local provider="$2"
-    if command -v jq >/dev/null 2>&1; then
-        if [ "$provider" = "vertex" ]; then
-            echo "$response" | jq -r '.candidates[0].content.parts[0].text' 2>/dev/null
+    (
+        if command -v jq >/dev/null 2>&1; then
+            if [ "$provider" = "vertex" ]; then
+                echo "$response" | jq -r '.candidates[0].content.parts[0].text' 2>/dev/null
+            else
+                echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null
+            fi
         else
-            echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null
+            if [ "$provider" = "vertex" ]; then
+                echo "$response" | sed -n 's/.*"text": *"\([^"]*\)".*/\1/p' | head -1
+            else
+                echo "$response" | sed -n 's/.*"content": *"\([^"]*\)".*/\1/p' | head -1
+            fi
         fi
-    else
-        if [ "$provider" = "vertex" ]; then
-            echo "$response" | sed -n 's/.*"text": *"\([^"]*\)".*/\1/p' | head -1
-        else
-            echo "$response" | sed -n 's/.*"content": *"\([^"]*\)".*/\1/p' | head -1
-        fi
-    fi
-    # Strip markdown backticks and surrounding whitespace
-    sed 's/^`//; s/`$//; s/^[[:space:]]*//; s/[[:space:]]*$//'
+    ) | sed 's/^`//; s/`$//; s/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
 # ============================================================
