@@ -1,11 +1,11 @@
-# ai-shell-helper 🚀
+# ai-shell-helper
 
 A simple CLI that translates natural language into shell commands using AI. Just type what you want to do in plain English!
 
 *Built for the [HackerSquad Builders Hackathon](https://hackersquad.io/builders/dashboard/events/cm5vmcvou000aov0lls2pmd3e) featuring Weaviate integration for intelligent command caching.*
 
 ---
-## 🚀 Quick Start
+## Quick Start
 
 1. **Clone the repository:**
    ```bash
@@ -13,11 +13,11 @@ A simple CLI that translates natural language into shell commands using AI. Just
    cd ai-shell-helper
    ```
 
-2. **Set up your Azure OpenAI credentials:**
+2. **Configure your AI provider:**
    ```bash
    cp .env.example .env
    ```
-   Edit `.env` and add your Azure OpenAI API key and endpoint.
+   Edit `.env` and set `AI_PROVIDER` to `openai` or `vertex`, then fill in the credentials for your chosen provider.
 
 3. **Create the alias:**
    ```bash
@@ -35,7 +35,7 @@ A simple CLI that translates natural language into shell commands using AI. Just
 **Optional:** Set up Weaviate for command caching (see Configuration section below).
 
 ---
-## ✨ Demo
+## Demo
 
 ```bash
 $ pls list my files
@@ -51,42 +51,42 @@ $ please how big are my files
 
 $ pls where am i
 > pwd
-/Users/dbystruev/Downloads/GitHub/Hack-a-tons/ai-shell-helper
+/Users/you/projects/ai-shell-helper
 ```
 
 ---
-## 📋 Features
+## Features
 
 * **Natural Language to Command:** Just type what you want to do - no need to remember complex syntax
 * **Instant Execution:** Shows the command in color, then runs it automatically
-* **Context-Aware:** Generates commands appropriate for your OS and shell
-* **Powered by GPT-4.1:** Uses Azure OpenAI API for accurate command generation
+* **Context-Aware:** Knows your current directory for accurate file operations
+* **Multiple AI Providers:** Choose between OpenAI (Azure) and Google Vertex AI (Gemini)
 * **Ultra-Simple:** Just `pls` or `please` followed by your request
 
 ---
-## ⚙️ How It Works
+## How It Works
 
 The `pls` or `please` command takes your natural language query and:
 
 1. **Checks Weaviate cache** for similar previous queries (if configured)
 2. If found, returns cached command instantly with green "(cached)" indicator
-3. If not found, sends query to Azure OpenAI for command generation
+3. If not found, sends query to your configured AI provider for command generation
 4. Extracts the clean command from the JSON response
 5. **Stores the query-command pair** in Weaviate for future use
 6. Displays the command in cyan color with a `>` prefix
-7. Executes the command automatically
+7. Executes the command automatically in your current directory
 
 ### Weaviate Integration
 
 Weaviate provides semantic caching that:
-- **Reduces API costs** by avoiding repeated OpenAI calls
+- **Reduces API costs** by avoiding repeated AI calls
 - **Improves response time** for similar queries
 - **Learns from usage** - builds a personalized command database
 - **Works across sessions** - cache persists between uses
 
 Example flow:
 ```bash
-$ pls list my files          # First time - calls OpenAI, stores in Weaviate
+$ pls list my files          # First time - calls AI, stores in Weaviate
 > ls                         # Blue text (from AI)
 
 $ pls show my files          # Similar query - finds cached result
@@ -94,34 +94,47 @@ $ pls show my files          # Similar query - finds cached result
 ```
 
 ---
-## 🔧 Configuration
+## Configuration
 
-You need three environment variables in your `.env` file:
+Set `AI_PROVIDER` in your `.env` to choose a provider, then fill in the corresponding credentials.
 
-- `AZURE_API_VERSION` - API version (usually `2025-01-01-preview`)
-- `OPENAI_API_KEY` - Your Azure OpenAI API key
-- `OPENAI_ENDPOINT` - Your Azure OpenAI endpoint URL
+### OpenAI (Azure)
 
-**Optional Weaviate caching:**
-- `WEAVIATE_URL` - Weaviate instance URL (local or remote)
-- `WEAVIATE_API_KEY` - Your Weaviate API key
+```env
+AI_PROVIDER=openai
+AZURE_API_VERSION=2025-01-01-preview
+OPENAI_API_KEY=your_api_key_here
+OPENAI_ENDPOINT=https://your-resource.cognitiveservices.azure.com
+```
+
+### Google Vertex AI (Gemini)
+
+```env
+AI_PROVIDER=vertex
+VERTEX_AI_PROJECT=your-gcp-project-id
+VERTEX_AI_LOCATION=global
+AI_MODEL=gemini-2.5-flash
+GOOGLE_APPLICATION_CREDENTIALS=.config/service-account-key.json
+```
+
+Place your service account JSON key in `.config/` (git-ignored):
+```bash
+mkdir -p .config
+cp /path/to/service-account-key.json .config/
+```
+
+The service account needs the **Vertex AI User** role in your Google Cloud project.
 
 ### Weaviate Setup (Optional)
 
-**Local setup:**
 ```bash
 docker compose up -d
 ```
 
-**Remote server setup:**
-```bash
-# On your remote server
-docker compose up -d
-# Then update WEAVIATE_URL in .env to your server's IP/domain
-```
+Then set `WEAVIATE_URL` in `.env` (defaults to `http://localhost:8080`).
 
 ---
-## 💡 More Examples
+## More Examples
 
 * `pls show my current git branch`
 * `please find all markdown files modified today`
@@ -130,6 +143,6 @@ docker compose up -d
 * `pls compress the src folder`
 
 ---
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
