@@ -42,7 +42,7 @@ fi
 WORK_DIR="${3:-$PWD}"
 MESSAGE="Current directory: ${WORK_DIR}\nQuery: ${2//$'\n'/\\n}"
 
-SYSTEM_PROMPT="You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with a single, executable shell command. Never include explanations, markdown, color codes, or escape sequences. If the request is unclear or not related to shell commands, respond with 'echo Please provide a specific command request'."
+SYSTEM_PROMPT="You are an expert at translating natural language to shell commands for a zsh shell on macOS. Respond ONLY with a single, executable shell command. Prefer simple one-liners over multi-line scripts. Use find, sed, or mv for file operations. Never include explanations, markdown, color codes, or escape sequences. If the request is unclear or not related to shell commands, respond with 'echo Please provide a specific command request'."
 
 # --- Extract command from response ---
 extract_command() {
@@ -169,7 +169,7 @@ elif [ "$AI_PROVIDER" = "vertex" ]; then
         -d "{
             \"contents\": [{\"role\": \"user\", \"parts\": [{\"text\": \"$MESSAGE\"}]}],
             \"systemInstruction\": {\"parts\": [{\"text\": \"$SYSTEM_PROMPT\"}]},
-            \"generationConfig\": {\"temperature\": 0, \"maxOutputTokens\": 1024}
+            \"generationConfig\": {\"temperature\": 0, \"maxOutputTokens\": 4096}
         }")
 
     if [ "$VERBOSE" -eq 1 ]; then

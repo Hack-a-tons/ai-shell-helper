@@ -90,4 +90,17 @@ if [[ "$COMMAND" =~ ^(rm|sudo|dd|mkfs|fdisk|format|del|deltree|shutdown|reboot|h
 fi
 
 cd "$USER_PWD"
-eval "$COMMAND"
+
+# Multi-line commands: write to temp script; single-line: eval directly
+if [[ "$COMMAND" == *$'\n'* ]]; then
+    TMPSCRIPT=$(mktemp /tmp/ai-shell-XXXXXX.sh)
+    echo '#!/usr/bin/env bash' > "$TMPSCRIPT"
+    echo "$COMMAND" >> "$TMPSCRIPT"
+    chmod +x "$TMPSCRIPT"
+    bash "$TMPSCRIPT"
+    EXIT_CODE=$?
+    rm -f "$TMPSCRIPT"
+    exit $EXIT_CODE
+else
+    eval "$COMMAND"
+fi
