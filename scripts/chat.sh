@@ -4,16 +4,22 @@
 cd "$(dirname $0)"
 
 VERBOSE=0
+DEBUG=0
 
 # --- Parse flags ---
 ARGS=()
 for arg in "$@"; do
     case "$arg" in
         -v|--verbose) VERBOSE=1 ;;
+        -d|--debug) DEBUG=1 ;;
         *) ARGS+=("$arg") ;;
     esac
 done
 set -- "${ARGS[@]}"
+
+if [ "$DEBUG" -eq 1 ]; then
+    set -x
+fi
 
 # --- Load .env ---
 ENV_CONTENT=$(cat ../.env)

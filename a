@@ -55,7 +55,13 @@ if [ -n "$CACHED_COMMAND" ]; then
     echo -e "\033[32m> $COMMAND (cached)\033[0m"
 else
     # Get command from AI provider
-    if [ "$VERBOSE" -eq 1 ]; then
+    if [ "$DEBUG" -eq 1 ]; then
+        # Debug: let set -x trace go to terminal, capture command via temp file
+        TMPFILE=$(mktemp)
+        ./scripts/chat.sh "" "$QUERY" "$USER_PWD" -d > "$TMPFILE"
+        COMMAND=$(cat "$TMPFILE")
+        rm -f "$TMPFILE"
+    elif [ "$VERBOSE" -eq 1 ]; then
         # Verbose: show debug output, extract command from last line
         FULL_OUTPUT=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" -v 2>&1)
         COMMAND=$(echo "$FULL_OUTPUT" | tail -1)
