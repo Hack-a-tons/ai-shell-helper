@@ -34,20 +34,38 @@ A simple CLI that translates natural language into shell commands using AI. Just
 
 **Optional:** Set up Weaviate for command caching (see Configuration section below).
 
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `-v`, `--verbose` | Show full API requests, JWT details, and raw JSON responses |
+| `-d`, `--debug` | Print every line executed (shell trace) |
+| `-h`, `--help` | Show help message |
+
+Examples:
+```bash
+pls list my files           # normal
+pls -v find all py files    # verbose
+pls -d list files           # debug (trace)
+pls -h                      # help
+```
+
 ---
 ## Demo
 
 ```bash
 $ pls list my files
 > ls
-a		README.md	scripts		setup.sh
+a           docker-compose.yml  README.md   scripts     setup.sh
 
-$ please how big are my files
-> du -sh *
-4.0K	a
-4.0K	README.md
-4.0K	scripts
-4.0K	setup.sh
+$ please list files with sizes
+> ls -lh
+total 32
+-rwxr-xr-x  a                   2.8K
+-rw-r--r--  docker-compose.yml  636B
+-rw-r--r--  README.md           3.9K
+drwxr-xr-x  scripts             128B
+-rwxr-xr-x  setup.sh            1.7K
 
 $ pls where am i
 > pwd
@@ -61,7 +79,9 @@ $ pls where am i
 * **Instant Execution:** Shows the command in color, then runs it automatically
 * **Context-Aware:** Knows your current directory for accurate file operations
 * **Multiple AI Providers:** Choose between OpenAI (Azure) and Google Vertex AI (Gemini)
-* **Ultra-Simple:** Just `pls` or `please` followed by your request
+* **Command Caching:** Optional Weaviate integration for semantic caching across sessions
+* **Debug & Verbose:** `-v` for API details, `-d` for shell trace, `-h` for help
+* **Graceful Fallback:** Non-shell queries respond with a helpful message instead of errors
 
 ---
 ## How It Works
@@ -116,6 +136,8 @@ VERTEX_AI_LOCATION=global
 AI_MODEL=gemini-2.5-flash
 GOOGLE_APPLICATION_CREDENTIALS=.config/service-account-key.json
 ```
+
+`AI_MODEL` defaults to `gemini-2.5-flash`. You can use any Gemini model available on Vertex AI (e.g. `gemini-2.5-pro`, `gemini-2.0-flash`).
 
 Place your service account JSON key in `.config/` (git-ignored):
 ```bash
