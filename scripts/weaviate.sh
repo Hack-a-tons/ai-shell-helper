@@ -5,9 +5,11 @@ ENV_CONTENT=$(cat "$(dirname $0)/../.env")
 WEAVIATE_URL=$(echo "$ENV_CONTENT" | grep -E '^WEAVIATE_URL=' | cut -d '=' -f 2-)
 WEAVIATE_API_KEY=$(echo "$ENV_CONTENT" | grep -E '^WEAVIATE_API_KEY=' | cut -d '=' -f 2-)
 
+CURL_OPTS="--connect-timeout 2 --max-time 5"
+
 # Function to initialize schema
 init_schema() {
-    curl -s "$WEAVIATE_URL/v1/schema" \
+    curl -s $CURL_OPTS "$WEAVIATE_URL/v1/schema" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
         -d '{
@@ -24,7 +26,7 @@ init_schema() {
 # Function to search for similar commands
 search_command() {
     local query="$1"
-    curl -s "$WEAVIATE_URL/v1/graphql" \
+    curl -s $CURL_OPTS "$WEAVIATE_URL/v1/graphql" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
         -d "{\"query\": \"{ Get { Command(where: {path: [\\\"query\\\"], operator: Equal, valueText: \\\"$query\\\"}, limit: 1) { command } } }\"}" \
@@ -35,7 +37,7 @@ search_command() {
 store_command() {
     local query="$1"
     local command="$2"
-    curl -s "$WEAVIATE_URL/v1/objects" \
+    curl -s $CURL_OPTS "$WEAVIATE_URL/v1/objects" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $WEAVIATE_API_KEY" \
         -d "{\"class\": \"Command\", \"properties\": {\"query\": \"$query\", \"command\": \"$command\", \"confidence\": 1.0}}" > /dev/null
