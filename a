@@ -4,12 +4,14 @@ cd "$(dirname $0)"
 
 QUERY="$*"
 VERBOSE=0
+DEBUG=0
 
 # --- Parse flags ---
 ARGS=()
 for arg in "$@"; do
     case "$arg" in
         -v|--verbose) VERBOSE=1 ;;
+        -d|--debug) DEBUG=1 ;;
         -h|--help)
             echo "Usage: pls [OPTIONS] <command description>"
             echo ""
@@ -17,6 +19,7 @@ for arg in "$@"; do
             echo ""
             echo "Options:"
             echo "  -v, --verbose   Show API requests and raw responses"
+            echo "  -d, --debug     Print every line executed (set -x)"
             echo "  -h, --help      Show this help message"
             echo ""
             echo "Examples:"
@@ -29,6 +32,10 @@ for arg in "$@"; do
     esac
 done
 QUERY="${ARGS[*]}"
+
+if [ "$DEBUG" -eq 1 ]; then
+    set -x
+fi
 
 if [ -z "$QUERY" ]; then
     echo "Usage: pls [OPTIONS] <command description>"
