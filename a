@@ -2,6 +2,7 @@
 USER_PWD="$PWD"
 cd "$(dirname $0)"
 
+QUERY="$*"
 VERBOSE=0
 
 # --- Parse flags ---
@@ -21,14 +22,12 @@ for arg in "$@"; do
             echo "Examples:"
             echo "  pls list my files"
             echo "  please how big are my files"
-            echo "  pls show my current git branch"
             echo "  pls -v find all python files"
             exit 0
             ;;
         *) ARGS+=("$arg") ;;
     esac
 done
-
 QUERY="${ARGS[*]}"
 
 if [ -z "$QUERY" ]; then
@@ -37,9 +36,9 @@ if [ -z "$QUERY" ]; then
     exit 0
 fi
 
-# --- Weaviate cache lookup ---
-CACHED_COMMAND=""
+# Try to find cached command in Weaviate first (if available)
 if command -v curl >/dev/null 2>&1; then
+    # Initialize schema on first use
     ./scripts/weaviate.sh init 2>/dev/null
     CACHED_COMMAND=$(./scripts/weaviate.sh search "$QUERY" 2>/dev/null)
 fi
@@ -50,19 +49,19 @@ if [ -n "$CACHED_COMMAND" ]; then
 else
     # Get command from AI provider
     if [ "$VERBOSE" -eq 1 ]; then
-        # Verbose: capture all output, display debug info, extract command
+        # Verbose: show debug output, extract command from last line
         FULL_OUTPUT=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" -v 2>&1)
         COMMAND=$(echo "$FULL_OUTPUT" | tail -1)
         echo "$FULL_OUTPUT" | sed '$d'
     else
-        # Normal: suppress stderr (matches original behavior), capture stdout only
+        # Normal: same pattern as original (2>/dev/null suppresses stderr)
         COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" 2>/dev/null)
     fi
     echo -e "\033[36m> $COMMAND\033[0m"
 
-    # Store in Weaviate for future use (if available, fully detached)
+    # Store in Weaviate for future use (if available)
     if command -v curl >/dev/null 2>&1; then
-        ./scripts/weaviate.sh store "$QUERY" "$COMMAND" </dev/null >/dev/null 2>&1 &
+        ./scripts/weaviate.sh store "$QUERY" "$COMMAND" 2>/dev/null &
     fi
 fi
 
