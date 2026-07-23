@@ -48,10 +48,16 @@ if [ -n "$CACHED_COMMAND" ]; then
     COMMAND="$CACHED_COMMAND"
     echo -e "\033[32m> $COMMAND (cached)\033[0m"
 else
-    # Get command from AI provider (stdout = command, stderr = verbose/debug)
-    VERBOSE_FLAG=""
-    [ "$VERBOSE" -eq 1 ] && VERBOSE_FLAG="-v"
-    COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" $VERBOSE_FLAG)
+    # Get command from AI provider
+    if [ "$VERBOSE" -eq 1 ]; then
+        # Verbose: capture all output, display debug info, extract command
+        FULL_OUTPUT=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" -v 2>&1)
+        COMMAND=$(echo "$FULL_OUTPUT" | tail -1)
+        echo "$FULL_OUTPUT" | sed '$d'
+    else
+        # Normal: suppress stderr (matches original behavior), capture stdout only
+        COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" 2>/dev/null)
+    fi
     echo -e "\033[36m> $COMMAND\033[0m"
 
     # Store in Weaviate for future use (if available, fully detached)
