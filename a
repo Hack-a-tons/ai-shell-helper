@@ -54,9 +54,9 @@ else
     COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" $VERBOSE_FLAG)
     echo -e "\033[36m> $COMMAND\033[0m"
 
-    # Store in Weaviate for future use (if available)
+    # Store in Weaviate for future use (if available, fully detached)
     if command -v curl >/dev/null 2>&1; then
-        ./scripts/weaviate.sh store "$QUERY" "$COMMAND" 2>/dev/null &
+        ./scripts/weaviate.sh store "$QUERY" "$COMMAND" </dev/null >/dev/null 2>&1 &
     fi
 fi
 
