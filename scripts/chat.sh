@@ -3,16 +3,32 @@
 
 cd "$(dirname $0)"
 
+VERBOSE=0
+
+# --- Parse flags ---
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        -v|--verbose) VERBOSE=1 ;;
+        *) ARGS+=("$arg") ;;
+    esac
+done
+set -- "${ARGS[@]}"
+
 # --- Load .env ---
 ENV_CONTENT=$(cat ../.env)
 eval "$(echo "$ENV_CONTENT" | grep -E '^[A-Z_]+=' | sed 's/^/export /')"
 
 AI_PROVIDER="${AI_PROVIDER:-openai}"
-echo >&2 "Provider: $AI_PROVIDER"
 
-# Validate $2 (message)
+if [ "$VERBOSE" -eq 1 ]; then
+    echo >&2 "Provider: $AI_PROVIDER"
+    echo >&2 "Model: ${AI_MODEL:-${1:-gpt-4.1}}"
+fi
+
+# Validate message
 if [ -z "$2" ]; then
-    echo >&2 "Usage: $0 <model> <message> [working_dir]"
+    echo >&2 "Usage: $0 <model> <message> [working_dir] [-v]"
     exit 1
 fi
 
@@ -54,10 +70,23 @@ if [ "$AI_PROVIDER" = "openai" ]; then
 
     MODEL="${1:-gpt-4.1}"
 
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo >&2 "--- Request ---"
+        echo >&2 "POST $OPENAI_ENDPOINT/openai/deployments/$MODEL/chat/completions?api-version=$AZURE_API_VERSION"
+        echo >&2 "Body: {\"messages\":[{\"role\":\"system\",\"content\":\"...\"},{\"role\":\"user\",\"content\":\"$MESSAGE\"}]}"
+        echo >&2 ""
+    fi
+
     RESPONSE=$(curl -s "$OPENAI_ENDPOINT/openai/deployments/$MODEL/chat/completions?api-version=$AZURE_API_VERSION" \
         -H "Content-Type: application/json" \
         -H "api-key: $OPENAI_API_KEY" \
         -d "{\"messages\":[{\"role\":\"system\",\"content\":\"$SYSTEM_PROMPT\"},{\"role\":\"user\",\"content\":\"$MESSAGE\"}]}")
+
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo >&2 "--- Response ---"
+        echo >&2 "$RESPONSE"
+        echo >&2 ""
+    fi
 
     extract_command "$RESPONSE" "openai"
 
@@ -95,13 +124,22 @@ elif [ "$AI_PROVIDER" = "vertex" ]; then
     signature=$(printf '%s.%s' "$header" "$payload" | openssl dgst -sha256 -sign <(echo "$PRIVATE_KEY") | base64 | tr '+/' '-_' | tr -d '=')
     assertion="${header}.${payload}.${signature}"
 
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo >&2 "--- JWT ---"
+        echo >&2 "Client: $CLIENT_EMAIL"
+        echo >&2 ""
+    fi
+
     # Exchange JWT for access token
-    access_token=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
+    token_response=$(curl -s -X POST "https://oauth2.googleapis.com/token" \
         -d "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer" \
-        -d "assertion=$assertion" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+        -d "assertion=$assertion")
+
+    access_token=$(echo "$token_response" | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
 
     if [ -z "$access_token" ]; then
         echo >&2 "Failed to obtain access token"
+        [ "$VERBOSE" -eq 1 ] && echo >&2 "Response: $token_response"
         exit 1
     fi
 
@@ -112,6 +150,13 @@ elif [ "$AI_PROVIDER" = "vertex" ]; then
         vertex_url="https://${VERTEX_AI_LOCATION}-aiplatform.googleapis.com/v1/projects/${VERTEX_AI_PROJECT}/locations/${VERTEX_AI_LOCATION}/publishers/google/models/${AI_MODEL}:generateContent"
     fi
 
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo >&2 "--- Request ---"
+        echo >&2 "POST $vertex_url"
+        echo >&2 "Body: {\"contents\":[{\"role\":\"user\",\"parts\":[{\"text\":\"$MESSAGE\"}]}],...}"
+        echo >&2 ""
+    fi
+
     RESPONSE=$(curl -s "$vertex_url" \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $access_token" \
@@ -120,6 +165,12 @@ elif [ "$AI_PROVIDER" = "vertex" ]; then
             \"systemInstruction\": {\"parts\": [{\"text\": \"$SYSTEM_PROMPT\"}]},
             \"generationConfig\": {\"temperature\": 0, \"maxOutputTokens\": 1024}
         }")
+
+    if [ "$VERBOSE" -eq 1 ]; then
+        echo >&2 "--- Response ---"
+        echo >&2 "$RESPONSE"
+        echo >&2 ""
+    fi
 
     extract_command "$RESPONSE" "vertex"
 

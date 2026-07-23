@@ -2,11 +2,44 @@
 USER_PWD="$PWD"
 cd "$(dirname $0)"
 
-QUERY="$*"
+VERBOSE=0
 
-# Try to find cached command in Weaviate first (if available)
+# --- Parse flags ---
+ARGS=()
+for arg in "$@"; do
+    case "$arg" in
+        -v|--verbose) VERBOSE=1 ;;
+        -h|--help)
+            echo "Usage: pls [OPTIONS] <command description>"
+            echo ""
+            echo "Translates natural language into shell commands using AI."
+            echo ""
+            echo "Options:"
+            echo "  -v, --verbose   Show API requests and raw responses"
+            echo "  -h, --help      Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  pls list my files"
+            echo "  please how big are my files"
+            echo "  pls show my current git branch"
+            echo "  pls -v find all python files"
+            exit 0
+            ;;
+        *) ARGS+=("$arg") ;;
+    esac
+done
+
+QUERY="${ARGS[*]}"
+
+if [ -z "$QUERY" ]; then
+    echo "Usage: pls [OPTIONS] <command description>"
+    echo "Try 'pls --help' for more information."
+    exit 0
+fi
+
+# --- Weaviate cache lookup ---
+CACHED_COMMAND=""
 if command -v curl >/dev/null 2>&1; then
-    # Initialize schema on first use
     ./scripts/weaviate.sh init 2>/dev/null
     CACHED_COMMAND=$(./scripts/weaviate.sh search "$QUERY" 2>/dev/null)
 fi
@@ -15,8 +48,10 @@ if [ -n "$CACHED_COMMAND" ]; then
     COMMAND="$CACHED_COMMAND"
     echo -e "\033[32m> $COMMAND (cached)\033[0m"
 else
-    # Get command from AI provider
-    COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" 2>/dev/null)
+    # Get command from AI provider (stdout = command, stderr = verbose/debug)
+    VERBOSE_FLAG=""
+    [ "$VERBOSE" -eq 1 ] && VERBOSE_FLAG="-v"
+    COMMAND=$(./scripts/chat.sh "" "$QUERY" "$USER_PWD" $VERBOSE_FLAG)
     echo -e "\033[36m> $COMMAND\033[0m"
 
     # Store in Weaviate for future use (if available)
