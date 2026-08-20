@@ -48,21 +48,22 @@ SYSTEM_PROMPT="You are an expert at translating natural language to shell comman
 extract_command() {
     local response="$1"
     local provider="$2"
-    (
-        if command -v jq >/dev/null 2>&1; then
-            if [ "$provider" = "vertex" ]; then
-                echo "$response" | jq -r '.candidates[0].content.parts[0].text' 2>/dev/null
-            else
-                echo "$response" | jq -r '.choices[0].message.content' 2>/dev/null
-            fi
+    local cmd
+    if command -v jq >/dev/null 2>&1; then
+        if [ "$provider" = "vertex" ]; then
+            cmd=$(echo "$response" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null)
         else
-            if [ "$provider" = "vertex" ]; then
-                echo "$response" | sed -n 's/.*"text": *"\([^"]*\)".*/\1/p' | head -1
-            else
-                echo "$response" | sed -n 's/.*"content": *"\([^"]*\)".*/\1/p' | head -1
-            fi
+            cmd=$(echo "$response" | jq -r '.choices[0].message.content // empty' 2>/dev/null)
         fi
-    ) | sed 's/^`//; s/`$//; s/^[[:space:]]*//; s/[[:space:]]*$//'
+    fi
+    if [ -z "$cmd" ]; then
+        if [ "$provider" = "vertex" ]; then
+            cmd=$(echo "$response" | sed -n 's/.*"text": *"\([^"]*\)".*/\1/p' | head -1)
+        else
+            cmd=$(echo "$response" | sed -n 's/.*"content": *"\([^"]*\)".*/\1/p' | head -1)
+        fi
+    fi
+    echo "$cmd" | sed 's/^`//; s/`$//; s/^[[:space:]]*//; s/[[:space:]]*$//'
 }
 
 # ============================================================

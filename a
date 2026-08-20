@@ -78,6 +78,12 @@ else
     fi
 fi
 
+# Validate that a real command was returned
+if [ -z "$COMMAND" ] || [ "$COMMAND" = "null" ]; then
+    echo -e "\033[31mError: No command returned (empty or invalid AI response).\033[0m" >&2
+    exit 1
+fi
+
 # Check for dangerous commands
 if [[ "$COMMAND" =~ ^(rm|sudo|dd|mkfs|fdisk|format|del|deltree|shutdown|reboot|halt|init|kill|killall|pkill|chmod.*777|chown.*root) ]]; then
     echo -e "\033[31mWarning: Potentially dangerous command detected!\033[0m"
